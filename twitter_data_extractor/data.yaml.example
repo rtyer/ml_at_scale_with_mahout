@@ -1,0 +1,6 @@
+# Fill in your details and rename to data.yaml to use
+twitter:
+    consumer_key:
+    consumer_secret:
+    oauth_token:
+    oauth_token_secret:    
