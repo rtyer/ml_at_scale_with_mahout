@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+require 'csv'
 require 'bundler'
 Bundler.require
 
@@ -15,11 +16,37 @@ Twitter.configure do |config|
   config.oauth_token_secret = cfg['twitter']['oauth_token_secret']
 end
 
-# Twitter.followers(ARGV[0]).users.each{ |u|
-#   puts "#{u.id}"  
-#   Twitter.followers(u.id).users.each{ |f|
-#     puts "\t#{f.id}"
-#   }
-# }
+CSV.open(ARGV[1], "w") do |csv|
+  user_id = Twitter.user(ARGV[0]).id
+  cursor = -1
+  friends = []
+  begin
+    response = Twitter.friends(ARGV[0], :cursor => cursor)
+    friends += response.users
+    cursor = response.next_cursor
+  end while cursor > 0
+  
+  puts "following: #{friends.length}"
+  friends.each{ |u|
+    csv << [user_id, u.id] 
+  }
+  friends.each{ |u|
+    begin
+      inner_cursor = -1
+      user_friends = []
+      begin
+        inner_response = Twitter.friends(u.id, :cursor => inner_cursor)
+        user_friends += inner_response.users
+        inner_cursor = inner_response.next_cursor
+      end while inner_cursor >0
+      puts "following: #{user_friends.length}"      
+      user_friends.each{ |f|
+        csv << [u.id, f.id]
+      }
+    rescue Exception
+      puts "error getting friends for user #{u.id}"
+    end
+  }
+end
 
 puts Twitter.rate_limit_status
